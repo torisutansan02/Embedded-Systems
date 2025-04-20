@@ -1,50 +1,36 @@
-#include "Ghost.h"
-#include <stdlib.h>
-#include <math.h>
+#include "game/Ghost.h"
 
-extern uint8_t pacmanMap[32][32];
-extern uint8_t superPac;
-extern uint8_t x, y;
+Ghost::Ghost(
+    uint8_t ghostType, 
+    uint8_t startX, 
+    uint8_t startY
+): 
+    x(startX), 
+    y(startY), 
+    startX(startX), 
+    startY(startY), 
+    type(ghostType), 
+    underTile(PATH) 
+{}
 
-void drawBlock(uint8_t x, uint8_t y, uint16_t color);
-void playNote(int note, int duration);
-
-#define ST7735_BLACK   0x0000
-#define ST7735_WHITE   0xFFFF
-#define ST7735_MAGENTA 0xF81F
-#define ST7735_CYAN    0xFFE0
-#define ST7735_GREEN   0x07E0
-#define ST7735_RED     0xF800
-
-#define WALL 1
-#define DOT 2
-#define PINKY 4
-#define BLINKY 5
-#define CLYDE 6
-#define POWER 7
-#define PATH 0
-
-extern int pacmanPelletsMelody[];
-
-Ghost::Ghost(uint8_t ghostType, uint8_t startX, uint8_t startY)
-    : x(startX), y(startY), startX(startX), startY(startY), type(ghostType), underTile(PATH) {}
-
-void Ghost::reset() {
+void Ghost::reset(uint8_t pacX, uint8_t pacY, bool superPac) {
     x = startX;
     y = startY;
+    underTile = PATH;
+    drawGhost(pacX, pacY, superPac);
 }
 
 uint8_t Ghost::getX() const { return x; }
 uint8_t Ghost::getY() const { return y; }
 
-void Ghost::update(uint8_t pacX, uint8_t pacY) {
-    move(pacX, pacY);
+void Ghost::update(uint8_t pacX, uint8_t pacY, bool superPac) {
+    move(pacX, pacY, superPac);
 }
 
-void Ghost::move(uint8_t pacX, uint8_t pacY) {
+void Ghost::move(uint8_t pacX, uint8_t pacY, bool superPac) {
     const int8_t dir[4][2] = { {0, -1}, {0, 1}, {1, 0}, {-1, 0} };
-    bool visited[32][32] = { false };
-    uint8_t parentX[32][32], parentY[32][32];
+    bool visited[MAP_HEIGHT][MAP_WIDTH] = { false };
+    uint8_t parentX[MAP_HEIGHT][MAP_WIDTH], parentY[MAP_HEIGHT][MAP_WIDTH];
 
     struct Node {
         uint8_t x, y;
@@ -65,9 +51,9 @@ void Ghost::move(uint8_t pacX, uint8_t pacY) {
             int nx = current.x + dir[i][0];
             int ny = current.y + dir[i][1];
 
-            if (nx < 0) nx = 30;
-            if (nx >= 32) nx = 1;
-            if (ny < 0 || ny >= 32) continue;
+            if (nx <= 0) nx = MAP_WIDTH - 1;
+            if (nx >= MAP_WIDTH) nx = 1;
+            if (ny < 0 || ny >= MAP_HEIGHT) continue;
 
             if (visited[ny][nx]) continue;
 
@@ -88,7 +74,7 @@ void Ghost::move(uint8_t pacX, uint8_t pacY) {
         if (found) break;
     }
 
-    eraseGhost();
+    eraseGhost(pacX, pacY, superPac);
 
     if (found) {
         uint8_t tx = pacX;
@@ -113,9 +99,9 @@ void Ghost::move(uint8_t pacX, uint8_t pacY) {
             int nx = x + dir[i][0];
             int ny = y + dir[i][1];
 
-            if (nx < 0) nx = 30;
-            if (nx >= 32) nx = 1;
-            if (ny < 0 || ny >= 32) continue;
+            if (nx <= 0) nx = MAP_WIDTH - 1;
+            if (nx >= MAP_WIDTH) nx = 1;
+            if (ny < 0 || ny >= MAP_HEIGHT) continue;
 
             uint8_t cell = pacmanMap[ny][nx];
             if (cell == WALL || cell == PINKY || cell == BLINKY || cell == CLYDE) continue;
@@ -136,30 +122,44 @@ void Ghost::move(uint8_t pacX, uint8_t pacY) {
 
     if (superPac && x == pacX && y == pacY) {
         playNote(pacmanPelletsMelody[1], 200);
-        drawBlock(x, y, ST7735_BLACK);
-        reset();
+        pacmanMap[y][x] = PATH;
+        reset(pacX, pacY, superPac);
+        pacmanMap[y][x] = PACMAN;
+        drawBlock(x, y, 0xFFE0);
+        return;
     }
 
-    drawGhost();
+    drawGhost(pacX, pacY, superPac);
 }
 
-void Ghost::eraseGhost() {
+void Ghost::eraseGhost(uint8_t pacX, uint8_t pacY, bool superPac) {
+    if (x == pacX && y == pacY && !superPac) return;
+
     pacmanMap[y][x] = underTile;
     drawBlock(x, y, underTile == DOT || underTile == POWER ? ST7735_WHITE : ST7735_BLACK);
 }
 
-void Ghost::drawGhost() {
+void Ghost::drawGhost(uint8_t pacX, uint8_t pacY, bool superPac) {
+    bool pacmanHere = (x == pacX && y == pacY);
     underTile = pacmanMap[y][x];
 
-    uint16_t color = superPac ? ST7735_RED :
+    uint16_t color = superPac ? ST7735_DARKBLUE :
                      (type == PINKY)  ? ST7735_MAGENTA :
                      (type == BLINKY) ? ST7735_CYAN :
                      ST7735_GREEN;
 
     pacmanMap[y][x] = type;
-    drawBlock(x, y, color);
+
+    if (!superPac && pacmanHere) {
+        drawBlock(x, y, color);
+        return;
+    }
+
+    if (!pacmanHere) {
+        drawBlock(x, y, color);
+    }
 }
 
 bool Ghost::isAtPosition(uint8_t px, uint8_t py) const {
-    return (x == px && y == py);
+    return x == px && y == py;
 }

@@ -1,6 +1,6 @@
-#include <avr/pgmspace.h>
-#define MAP_WIDTH 32
-#define MAP_HEIGHT 32
+#include "game/Display.h"
+
+uint8_t pacmanMap[MAP_HEIGHT][MAP_WIDTH] = {0};
 
 const uint8_t resetMap[MAP_HEIGHT][MAP_WIDTH] PROGMEM = {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
@@ -12,9 +12,9 @@ const uint8_t resetMap[MAP_HEIGHT][MAP_WIDTH] PROGMEM = {
     {1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1},
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     {1, 0, 2, 0, 0, 2, 0, 0, 2, 0, 1, 0, 0, 0, 0, 1, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 5, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1},
-    {0, 0, 0, 0, 0, 0, 1, 0, 2, 0, 1, 6, 0, 0, 0, 1, 0, 2, 0, 1, 1, 1, 1, 1, 1, 0, 2, 0, 1, 0, 0, 0},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1},
+    {0, 0, 0, 0, 0, 0, 1, 0, 2, 0, 1, 0, 0, 0, 0, 1, 0, 2, 0, 1, 1, 1, 1, 1, 1, 0, 2, 0, 1, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 1, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 1, 1, 1, 0, 2, 0, 1, 0, 0, 0},
@@ -32,7 +32,7 @@ const uint8_t resetMap[MAP_HEIGHT][MAP_WIDTH] PROGMEM = {
     {1, 0, 7, 0, 1, 1, 1, 0, 2, 0, 1, 1, 1, 0, 2, 0, 1, 1, 1, 0, 2, 0, 1, 1, 1, 1, 1, 1, 0, 7, 0, 1},
     {1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1},
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 3, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 1},
+    {1, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 2, 0, 1},
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 };
@@ -71,3 +71,43 @@ const uint8_t menu[MAP_HEIGHT][MAP_WIDTH] PROGMEM = {
     { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
     { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 },
 };
+
+void drawBlock(uint8_t x, uint8_t y, uint16_t color) {
+    if (x * PIXEL_SIZE >= ST7735_WIDTH || y * PIXEL_SIZE >= ST7735_HEIGHT) return;
+
+    for (uint8_t i = 0; i < (PIXEL_SIZE); i++) {
+        for (uint8_t j = 0; j < PIXEL_SIZE; j++) {
+            uint8_t px = x * PIXEL_SIZE + i;
+            uint8_t py = y * PIXEL_SIZE + j;
+            ST7735_drawPixel(px, py, color);
+        }
+    }
+}
+
+void drawMap() {
+    for (uint8_t y = 0; y < MAP_HEIGHT; y++) {
+        for (uint8_t x = 0; x < MAP_WIDTH; x++) {
+            uint16_t color;
+            switch (pacmanMap[y][x]) {
+                case 1: color = ST7735_BLUE; break;
+                case 0: color = ST7735_BLACK; break;
+                case 2: color = ST7735_WHITE; break;
+                case 3: color = ST7735_YELLOW; break;
+                case 4: color = ST7735_MAGENTA; break;
+                case 5: color = ST7735_CYAN; break;
+                case 6: color = ST7735_GREEN; break;
+                case 7: color = ST7735_ORANGE; break;
+                default: color = ST7735_BLACK; break;
+            }
+            drawBlock(x, y, color);
+        }
+    }
+}
+
+void loadMap(const uint8_t source[MAP_HEIGHT][MAP_WIDTH]) {
+    for (uint8_t i = 0; i < MAP_HEIGHT; ++i) {
+        for (uint8_t j = 0; j < MAP_WIDTH; ++j) {
+            pacmanMap[i][j] = pgm_read_byte(&(source[i][j]));
+        }
+    }
+}
