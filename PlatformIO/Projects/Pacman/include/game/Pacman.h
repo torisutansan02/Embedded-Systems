@@ -6,6 +6,7 @@
 #include "game/Constants.h"
 #include "game/Ghost.h"
 #include "utils/JOYSTICK.h"
+#include "utils/FOURD7S.h"
 
 class Ghost;
 
@@ -60,6 +61,7 @@ public:
 
     uint8_t getX() const;
     uint8_t getY() const;
+    uint8_t getScore() const;
     bool isSuperPac() const;
 };
 

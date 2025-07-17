@@ -8,6 +8,7 @@
 /*
 Game Declarations
 */
+
 bool displayMenu = true;
 bool displayGame = false;
 bool menuDrawn = false;
@@ -30,6 +31,9 @@ int Joystick_Tick(int state);
 
 enum GameState { GS_INIT, GS_RUNNING };
 int Game_Tick(int state);
+
+enum DisplayTick{ DS_INIT, DS_SHOW };
+int Display_Tick(int state);
 
 enum PacmanState { PS_INIT, PS_MOVE };
 int Pacman_Tick(int state);
@@ -55,6 +59,7 @@ int main(void) {
     unsigned long p1 = 1;
     unsigned long p2 = 150;
     unsigned long p3 = 150;
+    unsigned long p4 = 3;
     
     unsigned long GCD = findGCD(findGCD(p0, p1), findGCD(p2, p3));
     
@@ -62,6 +67,10 @@ int main(void) {
     tasks[1] = (task){ GS_INIT, p1 / GCD, 0, &Game_Tick };
     tasks[2] = (task){ ES_INIT, p2 / GCD, 0, &Enemy_Tick };
     tasks[3] = (task){ PS_INIT, p3 / GCD, 0, &Pacman_Tick };
+    tasks[4] = (task){ DS_INIT, p4 / GCD, 0, &Display_Tick };
+
+    DDRJ |= (1 << PJ0);   // Set PJ0 as output
+    PORTJ &= ~(1 << PJ0); // Clear initially
 
     TimerSet(GCD);
     TimerOn();
@@ -75,14 +84,23 @@ Tick Function and State Machine Logic
 
 int Joystick_Tick(int state) {
     switch (state) {
-        case JS_INIT: state = JS_READ; break;
-        case JS_READ: break;
-        default: state = JS_INIT; break;
+        case JS_INIT: 
+            state = JS_READ; 
+            break;
+        case JS_READ: 
+            break;
+        default: 
+            state = JS_INIT; 
+            break;
     }
     switch (state) {
-        case JS_INIT: break;
-        case JS_READ: updateJoystickState(); break;
-        default: break;
+        case JS_INIT: 
+            break;
+        case JS_READ: 
+            updateJoystickState(); 
+            break;
+        default: 
+            break;
     }
     return state;
 }
@@ -97,8 +115,8 @@ int Game_Tick(int state) {
         case GS_RUNNING: 
             if (!displayGame) {
                 state = GS_INIT; 
-                break;
             }
+            break;
         default: 
             state = GS_INIT; 
             break;
@@ -119,6 +137,75 @@ int Game_Tick(int state) {
         default: 
             break;
     }
+    return state;
+}
+
+int Display_Tick(int state) {
+    static uint8_t digitIndex = 0;
+    static int digits[4];
+
+    switch (state) {
+        case DS_INIT:
+            if (displayGame) {
+                state = DS_SHOW;
+            }
+            break;
+        case DS_SHOW:
+            if (!displayGame) {
+                state = DS_INIT;
+            }
+            break;
+        default:
+            state = DS_INIT;
+            break;
+    }
+
+    switch (state) {
+        case DS_INIT:
+            break;
+
+        case DS_SHOW: {
+            int score = pacman.getScore();
+
+            // Break score into digits
+            digits[0] = (score / 1000) % 10;
+            digits[1] = (score / 100) % 10;
+            digits[2] = (score / 10) % 10;
+            digits[3] = score % 10;
+
+            // Optional: blank leading zeros
+            bool leadingZero = true;
+            for (int i = 0; i < 4; i++) {
+                if (digits[i] == 0 && leadingZero && i != 3) {
+                    digits[i] = 10;  // index 10 = blank
+                } else {
+                    leadingZero = false;
+                }
+            }
+
+            // Turn off all digits (set HIGH)
+            PORTL |= (1 << PL4) | (1 << PL5) | (1 << PL6) | (1 << PL7);
+
+            // Output current digit's segment pattern
+            outNum(digits[digitIndex]);
+
+            // Enable one digit (active LOW)
+            switch (digitIndex) {
+                case 0: PORTL &= ~(1 << PL7); break; // DIG1 (leftmost)
+                case 1: PORTL &= ~(1 << PL6); break; // DIG2
+                case 2: PORTL &= ~(1 << PL5); break; // DIG3
+                case 3: PORTL &= ~(1 << PL4); break; // DIG4 (rightmost)
+            }
+
+            // Move to next digit for next tick
+            digitIndex = (digitIndex + 1) % 4;
+            break;
+        }
+
+        default:
+            break;
+    }
+
     return state;
 }
 

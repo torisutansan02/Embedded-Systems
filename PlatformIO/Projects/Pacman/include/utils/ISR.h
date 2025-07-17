@@ -10,7 +10,7 @@ typedef struct _task {
     int (*TickFct)(int);
 } task;
 
-#define NUM_TASKS 4
+#define NUM_TASKS 5
 
 extern task tasks[NUM_TASKS];
 extern volatile unsigned char TimerFlag;

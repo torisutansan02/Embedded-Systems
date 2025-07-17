@@ -146,4 +146,10 @@ void Pacman::winGame() {
 }
 
 uint8_t Pacman::getX() const { return x; }
+
 uint8_t Pacman::getY() const { return y; }
+
+uint8_t Pacman::getScore() const {
+    return score;
+}
+
